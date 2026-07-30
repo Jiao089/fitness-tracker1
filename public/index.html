@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="轻减">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#7FCCB6">
+  <title>轻减 - 多人减脂打卡</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/icon.svg">
+  <link rel="stylesheet" href="/css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <script>
+    // 注册 Service Worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(function() {});
+    }
+  </script>
+  <div id="app">
+
+    <!-- ========== 登录/注册页 ========== -->
+    <div id="page-auth" class="page auth-page active">
+      <div class="auth-logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+      </div>
+      <div class="auth-title">轻减</div>
+      <div class="auth-subtitle">和伙伴一起，轻松减脂</div>
+      <div style="width:100%;max-width:300px;">
+        <div class="form-group">
+          <label>你的昵称</label>
+          <input id="auth-nickname" class="glass-input" placeholder="输入昵称开始…" maxlength="12">
+        </div>
+        <button class="glass-btn primary" style="width:100%;margin-top:8px;" id="btn-start">开始使用</button>
+        <div style="margin-top:16px;font-size:var(--font-xs);color:var(--text-muted);">
+          已有圈子？<a href="javascript:void(0)" id="link-join-circle" style="color:var(--accent);">输入邀请码加入</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== 主页 ========== -->
+    <div id="page-home" class="page">
+      <div class="page-header">
+        <h1>🏃 轻减</h1>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span id="home-circle-name" style="font-size:var(--font-xs);color:var(--text-secondary);"></span>
+          <button class="glass-btn" style="padding:6px 12px;font-size:var(--font-xs);" id="btn-settings">⚙️</button>
+        </div>
+      </div>
+      <div id="home-summary"></div>
+      <div class="quick-actions">
+        <button class="quick-action" id="qa-food">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--primary-dark)" stroke-width="2"><path d="M18 8h1a4 4 0 010 8h-1M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8zM6 1v3M10 1v3M14 1v3"/></svg>
+          <span>饮食</span>
+        </button>
+        <button class="quick-action" id="qa-water">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#4FD1C5" stroke-width="2"><path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z"/></svg>
+          <span>喝水</span>
+        </button>
+        <button class="quick-action" id="qa-exercise">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          <span>运动</span>
+        </button>
+        <button class="quick-action" id="qa-weight">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#68D391" stroke-width="2"><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/></svg>
+          <span>体重</span>
+        </button>
+        <button class="quick-action" id="qa-mood">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#F6AD55" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+          <span>心情</span>
+        </button>
+      </div>
+      <div class="glass-card">
+        <div style="font-weight:600;font-size:var(--font-md);margin-bottom:12px;">📋 今日打卡动态</div>
+        <div id="home-timeline"></div>
+      </div>
+    </div>
+
+    <!-- ========== 打卡页 ========== -->
+    <div id="page-checkin" class="page">
+      <div class="page-header"><h1>今日打卡</h1></div>
+      <div class="tab-bar" id="checkin-tabs">
+        <button class="tab-item active" data-tab="food">🍽 饮食</button>
+        <button class="tab-item" data-tab="water">💧 喝水</button>
+        <button class="tab-item" data-tab="exercise">🏃 运动</button>
+        <button class="tab-item" data-tab="weight">⚖️ 体重</button>
+        <button class="tab-item" data-tab="mood">💭 心情</button>
+      </div>
+      <div id="checkin-food-panel"></div>
+      <div id="checkin-water-panel" style="display:none;"></div>
+      <div id="checkin-exercise-panel" style="display:none;"></div>
+      <div id="checkin-weight-panel" style="display:none;"></div>
+      <div id="checkin-mood-panel" style="display:none;"></div>
+    </div>
+
+    <!-- ========== 趋势页 ========== -->
+    <div id="page-trends" class="page">
+      <div class="page-header"><h1>我的趋势</h1></div>
+      <div class="tab-bar" id="trends-tabs">
+        <button class="tab-item active" data-metric="weight">📉 体重</button>
+        <button class="tab-item" data-metric="deficit">⚡ 热量缺口</button>
+        <button class="tab-item" data-metric="calories">🔥 饮食摄入</button>
+        <button class="tab-item" data-metric="exercise">💪 运动消耗</button>
+        <button class="tab-item" data-metric="water">💧 喝水</button>
+        <button class="tab-item" data-metric="mood">💭 心情</button>
+      </div>
+      <div class="glass-card">
+        <div class="chart-container"><canvas id="trend-chart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- ========== 圈子页 ========== -->
+    <div id="page-circle" class="page">
+      <div class="page-header"><h1>我的圈子</h1></div>
+      <div id="circle-content"></div>
+    </div>
+
+    <!-- ========== 历史页 ========== -->
+    <div id="page-history" class="page">
+      <div class="page-header"><h1>历史记录</h1></div>
+      <div id="history-content"></div>
+    </div>
+
+    <!-- ========== 设置页 ========== -->
+    <div id="page-settings" class="page">
+      <div class="page-header"><h1>个人设置</h1></div>
+      <div id="settings-content"></div>
+    </div>
+
+    <!-- ========== 底部导航 ========== -->
+    <nav id="bottom-nav" class="bottom-nav" style="display:none;">
+      <button class="nav-item active" data-page="home">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span>首页</span>
+      </button>
+      <button class="nav-item" data-page="checkin">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+        <span>打卡</span>
+      </button>
+      <button class="nav-item" data-page="trends">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        <span>趋势</span>
+      </button>
+      <button class="nav-item" data-page="circle">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4-4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+        <span>圈子</span>
+      </button>
+      <button class="nav-item" data-page="history">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span>历史</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- 食物选择模态框 -->
+  <div class="modal-overlay" id="food-modal">
+    <div class="modal-content" style="max-height:85vh;">
+      <h2>🍽 选择食物</h2>
+      <div class="food-search-wrap">
+        <input id="food-search" class="glass-input" placeholder="搜索食物…">
+      </div>
+      <div id="food-categories" class="chip-group" style="margin-bottom:12px;"></div>
+      <div id="food-list" class="food-list"></div>
+      <div id="food-amount" style="display:none;margin-top:12px;">
+        <div class="form-group">
+          <label>分量（克）</label>
+          <input id="food-amount-input" class="glass-input" type="number" placeholder="例如：200" min="1" value="100">
+        </div>
+        <div class="form-group">
+          <label>餐别</label>
+          <div class="chip-group" id="meal-type-group">
+            <button class="chip active" data-meal="breakfast">早餐</button>
+            <button class="chip" data-meal="lunch">午餐</button>
+            <button class="chip" data-meal="dinner">晚餐</button>
+            <button class="chip" data-meal="snack">加餐</button>
+          </div>
+        </div>
+        <button class="glass-btn primary" style="width:100%;" id="btn-food-submit">✅ 确认打卡</button>
+      </div>
+      <button class="glass-btn" style="width:100%;margin-top:8px;" id="btn-food-cancel">取消</button>
+    </div>
+  </div>
+
+  <script src="/js/bundle.js"></script>
+</body>
+</html>
